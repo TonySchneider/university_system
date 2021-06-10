@@ -170,10 +170,6 @@ def get_university(university_id):
     return str(db_obj.get_all_values_by_field(table_name='universities', condition_field='id', condition_value=university_id)), 200
 
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=80)
-
-
 def main(*args, **kwargs) -> int:
     try:
         logging.info('Starting app... Press CTRL+C to quit.')

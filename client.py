@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 __licence__ = 'GPL'
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 __author__ = 'Tony Schneider'
 __email__ = 'tonysch05@gmail.com'
 
@@ -147,6 +147,12 @@ def enroll_student(student_id, university_id):
     if students_gpa < university_min_gpa:
         return f"The GPA of this student is not enough for the provided university. Student's GPA - '{students_gpa}' | University's min GPA - '{university_min_gpa}' ", 409  # conflict status_code
 
+    # check if this student already enrolled to university
+    current_students_university = db_obj.get_all_values_by_field(table_name='students', field='university_id', condition_field='id', condition_value=student_id, first_item=True)
+    if current_students_university != 0:
+        old_university_available_places = db_obj.get_all_values_by_field(table_name='universities', field='available_places', condition_field='id', condition_value=current_students_university, first_item=True)
+        db_obj.update_field(table_name='universities', field='available_places', value=old_university_available_places + 1, condition_field='id', condition_value=current_students_university)
+
     # update student's university
     db_obj.update_field(table_name='students', field='university_id', value=university_id, condition_field='id', condition_value=student_id)
 
@@ -159,13 +165,23 @@ def enroll_student(student_id, university_id):
 
 @app.route('/students/<university_id>', methods=['GET'])
 def get_students(university_id):
+    # verify university id
+    if int(university_id) not in db_obj.get_all_values_by_field(table_name='universities', field='id'):
+        return f"There are no university by the provided ID ('{university_id}')", 400
+
     list_of_students = db_obj.get_all_values_by_field(table_name='students', condition_field='university_id', condition_value=university_id)
+
+    if not list_of_students:
+        return f"There are no students enrolled to the specified university (id - '{university_id}')", 200
 
     return str(list_of_students), 200
 
 
 @app.route('/university/<university_id>', methods=['GET'])
 def get_university(university_id):
+    # verify university id
+    if int(university_id) not in db_obj.get_all_values_by_field(table_name='universities', field='id'):
+        return f"There are no university by the provided ID ('{university_id}')", 400
 
     return str(db_obj.get_all_values_by_field(table_name='universities', condition_field='id', condition_value=university_id)), 200
 
